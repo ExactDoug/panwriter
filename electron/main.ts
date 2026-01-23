@@ -4,18 +4,19 @@ import * as fs from 'fs'
 
 import * as ipc from './ipc'
 import { fileExportDialog, fileExportHTMLToClipboard, fileExportLikePrevious, fileExportToClipboard } from './pandoc/export'
-import { Doc } from '../src/appState/AppState'
+import { Doc, Settings, defaultSettings } from '../src/appState/AppState'
 import { importFile } from './pandoc/import'
 import { saveFile, openFile } from './file'
 import { Message } from './preload'
 import { clearRecentFiles, getRecentFiles } from './recentFiles'
-import { loadSettings } from './settings'
+import { loadSettings, saveSettings } from './settings'
 
 const { autoUpdater } = require('electron-updater')
 require('fix-path')() // needed to execute pandoc on macOS prod build
 
 let appWillQuit = false
 const settingsPromise = loadSettings()
+let currentSettings: Settings = defaultSettings
 
 
 declare class CustomBrowserWindow extends Electron.BrowserWindow {
@@ -196,6 +197,7 @@ const createWindow = async (filePath?: string, toImport=false, wasCreatedOnStart
     }
     try {
       const settings = await settingsPromise
+      currentSettings = settings
       if (settings.autoUpdateApp) {
         autoUpdater.allowPrerelease = false
         autoUpdater.checkForUpdatesAndNotify()
@@ -434,6 +436,24 @@ const setMenu = async (aWindowIsOpen=true, useRecentFilesCache=false) => {
     , submenu: [
         {role: 'about'}
       , {type: 'separator'}
+      , { label: 'Check for Updates...'
+        , click: async () => {
+            try {
+              await autoUpdater.checkForUpdatesAndNotify()
+            } catch (e) {
+              dialog.showErrorBox('Update Check Failed', String(e))
+            }
+          }
+        }
+      , { label: 'Auto-Update on Launch'
+        , type: 'checkbox' as const
+        , checked: currentSettings.autoUpdateApp
+        , click: (menuItem: Electron.MenuItem) => {
+            currentSettings = { ...currentSettings, autoUpdateApp: menuItem.checked }
+            saveSettings(currentSettings)
+          }
+        }
+      , {type: 'separator'}
       , {role: 'services', submenu: []}
       , {type: 'separator'}
       , {role: 'hide'}
@@ -453,6 +473,32 @@ const setMenu = async (aWindowIsOpen=true, useRecentFilesCache=false) => {
     , {role: 'front'}
     ]
   }
+
+  if (process.platform !== 'darwin') {
+    template.push({
+      label: 'Help'
+    , submenu: [
+        { label: 'Check for Updates...'
+        , click: async () => {
+            try {
+              await autoUpdater.checkForUpdatesAndNotify()
+            } catch (e) {
+              dialog.showErrorBox('Update Check Failed', String(e))
+            }
+          }
+        }
+      , { label: 'Auto-Update on Launch'
+        , type: 'checkbox' as const
+        , checked: currentSettings.autoUpdateApp
+        , click: (menuItem: Electron.MenuItem) => {
+            currentSettings = { ...currentSettings, autoUpdateApp: menuItem.checked }
+            saveSettings(currentSettings)
+          }
+        }
+      ]
+    })
+  }
+
   var menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }

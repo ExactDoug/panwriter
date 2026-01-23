@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises'
+import { mkdir, readFile, writeFile } from 'fs/promises'
 import * as jsYaml from 'js-yaml'
 import { app } from 'electron'
 import { basename, sep } from 'path'
@@ -26,4 +26,17 @@ export const readDataDirFile = async (fileName: string): Promise<[Meta | undefin
     console.warn("Error loading or parsing YAML file." + (e as Error).message)
     return [ undefined, fileName ]
   }
+}
+
+/**
+ * writes a yaml file to the data directory
+ *
+ * make sure this function is safe to expose in `preload.ts`
+ */
+export const writeDataDirFile = async (fileName: string, data: Record<string, unknown>): Promise<void> => {
+  // make sure only PanWriterUserData directory can be accessed
+  const filePath = dataDir + basename(fileName)
+  await mkdir(dataDir, { recursive: true })
+  const yamlStr = jsYaml.dump(data)
+  await writeFile(filePath, yamlStr, 'utf8')
 }
