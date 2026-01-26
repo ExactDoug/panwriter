@@ -358,12 +358,12 @@ const setMenu = async (aWindowIsOpen=true, useRecentFilesCache=false) => {
         , enabled: aWindowIsOpen
         }
       , { label: 'Find Next'
-        , accelerator: 'CmdOrCtrl+G'
+        , accelerator: process.platform === 'win32' ? 'F3' : 'CmdOrCtrl+G'
         , click: () => windowSendCommand('findNext')
         , enabled: aWindowIsOpen
         }
       , { label: 'Find Previous'
-        , accelerator: 'CmdOrCtrl+Shift+G'
+        , accelerator: process.platform === 'win32' ? 'Shift+F3' : 'CmdOrCtrl+Shift+G'
         , click: () => windowSendCommand('findPrevious')
         , enabled: aWindowIsOpen
         }
