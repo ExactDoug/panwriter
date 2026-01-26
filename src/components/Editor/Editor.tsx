@@ -80,9 +80,93 @@ const onEditorDidMount = (editor: CMEditor) => {
 
   registerScrollEditor(editor);
 
-  window.ipcApi?.on.find(         () => editor.execCommand('findPersistent'))
-  window.ipcApi?.on.findNext(     () => editor.execCommand('findPersistentNext'))
-  window.ipcApi?.on.findPrevious( () => editor.execCommand('findPersistentPrev'))
+  let searchCloseFunc: (() => void) | null = null
+
+  const refocusSearchInput = (ed: CMEditor) => {
+    requestAnimationFrame(() => {
+      const wrapper = ed.getWrapperElement()
+      const input = wrapper.querySelector('.CodeMirror-search-field') as HTMLInputElement | null
+      if (input && document.contains(input)) {
+        input.focus()
+      }
+    })
+  }
+
+  const openSearch = (ed: CMEditor) => {
+    const wrapper = ed.getWrapperElement()
+
+    // If dialog already open, just refocus it
+    const existingInput = wrapper.querySelector('.CodeMirror-search-field') as HTMLInputElement | null
+    if (existingInput && document.contains(existingInput)) {
+      existingInput.focus()
+      existingInput.select()
+      return
+    }
+
+    // Monkey-patch openDialog to inject closeOnBlur: false for this one call
+    const origOpenDialog = (ed as any).openDialog
+    ;(ed as any).openDialog = function(template: any, callback: any, options: any) {
+      options = { ...options, closeOnBlur: false }
+      searchCloseFunc = origOpenDialog.call(this, template, callback, options)
+      ;(ed as any).openDialog = origOpenDialog
+      return searchCloseFunc
+    }
+    ed.execCommand('findPersistent')
+
+    // Attach handlers after dialog renders
+    requestAnimationFrame(() => {
+      const input = wrapper.querySelector('.CodeMirror-search-field') as HTMLInputElement | null
+      if (!input || input.dataset.searchHandlersAttached) return
+      input.dataset.searchHandlersAttached = 'true'
+
+      // After CM's searchNext moves focus to editor, bring it back
+      input.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          refocusSearchInput(ed)
+        }
+      })
+
+      // Click in editor content closes the dialog (replaces closeOnBlur)
+      const onWrapperMouseDown = (e: MouseEvent) => {
+        const dialog = wrapper.querySelector('.CodeMirror-dialog')
+        if (!dialog) {
+          wrapper.removeEventListener('mousedown', onWrapperMouseDown, true)
+          return
+        }
+        if (!dialog.contains(e.target as Node)) {
+          if (searchCloseFunc) {
+            searchCloseFunc()
+            searchCloseFunc = null
+          }
+          wrapper.removeEventListener('mousedown', onWrapperMouseDown, true)
+        }
+      }
+      wrapper.addEventListener('mousedown', onWrapperMouseDown, true)
+    })
+  }
+
+  // Override CodeMirror's default find keymap with our custom search behavior
+  editor.addKeyMap({
+    'Ctrl-F': () => openSearch(editor),
+    'Cmd-F': () => openSearch(editor),
+    'F3': () => { editor.execCommand('findPersistentNext'); refocusSearchInput(editor) },
+    'Shift-F3': () => { editor.execCommand('findPersistentPrev'); refocusSearchInput(editor) },
+    'Ctrl-G': () => { editor.execCommand('findPersistentNext'); refocusSearchInput(editor) },
+    'Shift-Ctrl-G': () => { editor.execCommand('findPersistentPrev'); refocusSearchInput(editor) },
+    'Cmd-G': () => { editor.execCommand('findPersistentNext'); refocusSearchInput(editor) },
+    'Shift-Cmd-G': () => { editor.execCommand('findPersistentPrev'); refocusSearchInput(editor) },
+  })
+
+  // Keep IPC handlers as backup (for menu-triggered actions)
+  window.ipcApi?.on.find(() => openSearch(editor))
+  window.ipcApi?.on.findNext(() => {
+    editor.execCommand('findPersistentNext')
+    refocusSearchInput(editor)
+  })
+  window.ipcApi?.on.findPrevious(() => {
+    editor.execCommand('findPersistentPrev')
+    refocusSearchInput(editor)
+  })
 
 
   const replaceSelection = (fn: (s: string) => string) =>
