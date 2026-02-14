@@ -47,7 +47,13 @@ If you have a YAML metadata block, like in the following example, PanWriter will
 
 this command will be executed:
 
-    pandoc --toc --include-in-header foo.css --include-in-header bar.js --output test.html --to html --standalone
+    pandoc -f gfm-tex_math_dollars --toc --include-in-header foo.css --include-in-header bar.js --output test.html --to html --standalone
+
+PanWriter uses `gfm-tex_math_dollars` as the default pandoc input format for export. This keeps `$` as literal text (for example currency) unless you opt in to dollar-delimited math.
+
+If you want `$...$` to be parsed as math in a specific document or document type, add this metadata:
+
+    tex-math-dollars: true
 
 See the [pandoc user's guide](http://pandoc.org/MANUAL.html) for available options.
 
