@@ -21,6 +21,17 @@ interface Out {
   [key: string]: undefined | JSON;
 }
 
+const getFromFormat = (docMeta: Meta, extMeta: Meta): string => {
+  const texMathDollars =
+    typeof docMeta['tex-math-dollars'] === 'boolean'
+      ? docMeta['tex-math-dollars']
+      : typeof extMeta['tex-math-dollars'] === 'boolean'
+        ? extMeta['tex-math-dollars']
+        : false
+
+  return texMathDollars ? 'gfm' : 'gfm-tex_math_dollars'
+}
+
 declare class CustomBrowserWindow extends Electron.BrowserWindow {
   previousExportConfig?: ExportOptions;
 }
@@ -137,10 +148,11 @@ const runFileExport = async (
   const out = mergeAndValidate(docMeta, extMeta || {}, exp.outputPath, exp.toClipboardFormat)
 
   const cmd  = 'pandoc'
-  // Use GFM (GitHub Flavored Markdown) as input format
-  // GFM allows bullet lists without blank lines before them, matching how markdown-it renders in preview
-  // This fixes the issue where lists weren't being recognized in exported documents
-  const fromFormat = 'gfm'
+  // Use GFM (GitHub Flavored Markdown) as input format.
+  // GFM allows bullet lists without blank lines before them, matching how markdown-it renders in preview.
+  // By default we disable `tex_math_dollars` to avoid accidental `$...$` math parsing during export.
+  // This can be re-enabled via YAML metadata: `tex-math-dollars: true`.
+  const fromFormat = getFromFormat(docMeta, extMeta || {})
   const args = ['-f', fromFormat].concat(extMeta ? ['--metadata-file', fileName] : []).concat( toArgs(out) )
   const cmdDebug = cmd + ' ' + args.map(a => a.includes(' ') ? `'${a}'` : a).join(' ')
   let receivedError = false
