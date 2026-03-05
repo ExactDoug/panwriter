@@ -23,17 +23,25 @@ interface Props {
 
 export const Editor = (props: Props) => {
   const { state, dispatch } = props
+  const maxWidth = typeof state.doc.meta.maxwidth === 'string'
+    ? state.doc.meta.maxwidth
+    : undefined
+  const wrapperStyle = maxWidth
+    ? { '--content-max-width': maxWidth, height: '100%' } as React.CSSProperties
+    : { height: '100%' } as React.CSSProperties
   return (
-    <CodeMirror
-      onBeforeChange={ (_ed, _diff, md) =>
-        dispatch({ type: 'setMdAndRender', md })
-      }
-      onScroll={scrollPreview}
-      editorDidMount={onEditorDidMount}
-      value={state.doc.md}
-      autoCursor={true}
-      options={codeMirrorOptions}
-      />
+    <div className="editor-width-wrapper" style={wrapperStyle}>
+      <CodeMirror
+        onBeforeChange={ (_ed, _diff, md) =>
+          dispatch({ type: 'setMdAndRender', md })
+        }
+        onScroll={scrollPreview}
+        editorDidMount={onEditorDidMount}
+        value={state.doc.md}
+        autoCursor={true}
+        options={codeMirrorOptions}
+        />
+    </div>
   )
 }
 

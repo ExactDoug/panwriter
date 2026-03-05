@@ -21,7 +21,7 @@ div.CodeMirror {
 }
 .CodeMirror-lines { /* div holding all the text lines */
   padding: 60px 50px 50px 50px;
-  max-width: 40em;
+  max-width: var(--content-max-width, 40em);
   margin: 0 auto;
 }
 

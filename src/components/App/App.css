@@ -119,6 +119,7 @@ select:focus {
 }
 
 /* Hide text editor when metaEditor is open */
-.metaeditor + .react-codemirror2 {
+.metaeditor + .react-codemirror2,
+.metaeditor + .editor-width-wrapper {
   display: none;
 }
