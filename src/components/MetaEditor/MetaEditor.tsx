@@ -123,6 +123,11 @@ const metaKvs: Kv[] = [{
 }]
 
 const layoutKvs: Kv[] = [{
+  name: 'maxwidth'
+, label: 'Content width'
+, type: 'string'
+, placeholder: '36em'
+}, {
   name: 'mainfont'
 , label: 'Font'
 , type: 'select'
