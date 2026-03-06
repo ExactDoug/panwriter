@@ -11,8 +11,9 @@ export const saveSettings = async (settings: Settings): Promise<void> => {
 }
 
 const parseSettings = (data: Record<string, unknown> = {}): Settings => {
-  const { autoUpdateApp } = data
+  const { autoUpdateApp, defaultContentWidth } = data
   return {
     autoUpdateApp: autoUpdateApp === undefined ? defaultSettings.autoUpdateApp : !!autoUpdateApp
+  , defaultContentWidth: typeof defaultContentWidth === 'string' ? defaultContentWidth : defaultSettings.defaultContentWidth
   }
 }

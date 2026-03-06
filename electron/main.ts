@@ -4,7 +4,7 @@ import * as fs from 'fs'
 
 import * as ipc from './ipc'
 import { fileExportDialog, fileExportHTMLToClipboard, fileExportLikePrevious, fileExportToClipboard } from './pandoc/export'
-import { Doc, Settings, defaultSettings } from '../src/appState/AppState'
+import { Doc, Settings, defaultSettings, contentWidthChoices } from '../src/appState/AppState'
 import { importFile } from './pandoc/import'
 import { saveFile, openFile } from './file'
 import { Message } from './preload'
@@ -403,6 +403,19 @@ const setMenu = async (aWindowIsOpen=true, useRecentFilesCache=false) => {
         , accelerator: 'CmdOrCtrl+3'
         , click: () => windowSendMessage({ type: 'split', split: 'onlyPreview' })
         , enabled: aWindowIsOpen
+        }
+      , {type: 'separator'}
+      , { label: 'Default Content Width'
+        , submenu: contentWidthChoices.map(choice => ({
+            label: choice.label
+          , type: 'radio' as const
+          , checked: currentSettings.defaultContentWidth === choice.value
+          , click: () => {
+              currentSettings = { ...currentSettings, defaultContentWidth: choice.value }
+              saveSettings(currentSettings)
+              windows.forEach(w => ipc.sendMessage(w, { type: 'loadSettings', settings: currentSettings }))
+            }
+          }))
         }
       , {type: 'separator'}
       , {role: 'toggledevtools' as Electron.MenuItemConstructorOptions['role']}

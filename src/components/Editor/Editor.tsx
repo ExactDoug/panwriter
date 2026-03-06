@@ -25,7 +25,7 @@ export const Editor = (props: Props) => {
   const { state, dispatch } = props
   const maxWidth = typeof state.doc.meta.maxwidth === 'string'
     ? state.doc.meta.maxwidth
-    : undefined
+    : state.settings.defaultContentWidth || undefined
   const wrapperStyle = maxWidth
     ? { '--content-max-width': maxWidth, height: '100%' } as React.CSSProperties
     : { height: '100%' } as React.CSSProperties

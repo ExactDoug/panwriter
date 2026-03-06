@@ -13,6 +13,7 @@ interface BaseKv {
   name: string;
   label: string;
   placeholder?: string;
+  tooltip?: string;
   onLoad?: (v: string) => string;
   onDone?: (v: string) => string;
 }
@@ -45,7 +46,7 @@ export const MetaEditor = (props: Props) => {
   const { doc } = state
   const renderKv = (kv: Kv) =>
     <Fragment key={kv.name}>
-      <label htmlFor={kv.name}>
+      <label htmlFor={kv.name} title={kv.tooltip}>
         { kv.label }:
       </label>
       { renderInput(kv) }
@@ -101,7 +102,7 @@ export const MetaEditor = (props: Props) => {
 }
 
 const renderOption = (o: string) =>
-  <option key={o} value={o || 'System font, sans-serif'}>{o}</option>
+  <option key={o} value={o}>{o || 'System font, sans-serif'}</option>
 
 const metaKvs: Kv[] = [{
   name: 'title'
@@ -122,11 +123,31 @@ const metaKvs: Kv[] = [{
 , placeholder: 'en'
 }]
 
+const widthOptions: {label: string, value: string}[] = [
+  { label: 'Default',          value: '' }
+, { label: 'Narrow (36em)',    value: '36em' }
+, { label: 'Medium (48em)',    value: '48em' }
+, { label: 'Wide (60em)',      value: '60em' }
+, { label: 'Extra Wide (80em)', value: '80em' }
+, { label: 'Full Width',       value: 'none' }
+]
+
+const widthValueToLabel = (v: string): string => {
+  if (v === '36em') return 'Default' // template default, not explicitly set
+  return widthOptions.find(o => o.value === v)?.label || v
+}
+
+const widthLabelToValue = (l: string): string =>
+  widthOptions.find(o => o.label === l)?.value ?? l
+
 const layoutKvs: Kv[] = [{
   name: 'maxwidth'
 , label: 'Content width'
-, type: 'string'
-, placeholder: '36em'
+, type: 'select'
+, options: widthOptions.map(o => o.label)
+, tooltip: 'Maximum width of content in editor, preview, and HTML export. "Full Width" fills the available space.'
+, onLoad: widthValueToLabel
+, onDone: widthLabelToValue
 }, {
   name: 'mainfont'
 , label: 'Font'

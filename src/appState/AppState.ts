@@ -38,8 +38,18 @@ export type ViewSplit = typeof viewSplits[number]
 
 export interface Settings {
   autoUpdateApp: boolean;
+  defaultContentWidth: string;
 }
 
 export const defaultSettings: Settings = {
   autoUpdateApp: true
+, defaultContentWidth: ''
 }
+
+export const contentWidthChoices = [
+  { label: 'Default (36em)', value: '' }
+, { label: 'Medium (48em)',  value: '48em' }
+, { label: 'Wide (60em)',    value: '60em' }
+, { label: 'Extra Wide (80em)', value: '80em' }
+, { label: 'Full Width',    value: 'none' }
+]

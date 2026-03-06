@@ -30,7 +30,7 @@ export const App = () => {
       renderPreview(state)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.doc, state.split, state.paginated])
+  }, [state.doc, state.split, state.paginated, state.settings.defaultContentWidth])
 
   useEffect(() => {
     if (!window.ipcApi) {
