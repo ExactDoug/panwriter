@@ -317,22 +317,22 @@ const setMenu = async (aWindowIsOpen=true, useRecentFilesCache=false) => {
         }
       , { label: 'Export…'
         , accelerator: 'CmdOrCtrl+Shift+E'
-        , click: () => invokeWithWinAndDoc(fileExportDialog)
+        , click: () => invokeWithWinAndDoc((win, doc) => fileExportDialog(win, doc, currentSettings))
         , enabled: aWindowIsOpen
         }
       , { label: 'Export like previous'
         , accelerator: 'CmdOrCtrl+E'
-        , click: () => invokeWithWinAndDoc(fileExportLikePrevious)
+        , click: () => invokeWithWinAndDoc((win, doc) => fileExportLikePrevious(win, doc, currentSettings))
         , enabled: aWindowIsOpen
         }
       , { label: 'Export to clipboard'
         , accelerator: 'CmdOrCtrl+Alt+E'
-        , click: () => invokeWithWinAndDoc(fileExportToClipboard)
+        , click: () => invokeWithWinAndDoc((win, doc) => fileExportToClipboard(win, doc, currentSettings))
         , enabled: aWindowIsOpen
         }
       , { label: 'Export as rich text to clipboard'
         , accelerator: 'CmdOrCtrl+Alt+Shift+E'
-        , click: () => invokeWithWinAndDoc(fileExportHTMLToClipboard)
+        , click: () => invokeWithWinAndDoc((win, doc) => fileExportHTMLToClipboard(win, doc, currentSettings))
         , enabled: aWindowIsOpen
         }
       , { label: 'Import…'

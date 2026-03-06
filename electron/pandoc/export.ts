@@ -1,7 +1,7 @@
 import { spawn, SpawnOptionsWithoutStdio } from 'child_process'
 import { BrowserWindow, clipboard, dialog, ipcMain } from 'electron'
 import { basename, dirname, extname } from 'path'
-import { Doc, JSON, Meta } from '../../src/appState/AppState'
+import { Doc, JSON, Meta, Settings } from '../../src/appState/AppState'
 import { Result } from '../../src/result'
 import { readDataDirFile } from '../dataDir'
 import { showModalWindow } from './modal'
@@ -36,7 +36,7 @@ declare class CustomBrowserWindow extends Electron.BrowserWindow {
   previousExportConfig?: ExportOptions;
 }
 
-export const fileExportDialog = async (win: CustomBrowserWindow, doc: Doc) => {
+export const fileExportDialog = async (win: CustomBrowserWindow, doc: Doc, settings?: Settings) => {
   const spawnOpts: SpawnOptionsWithoutStdio = {}
   const inputPath = doc.filePath
 
@@ -74,20 +74,20 @@ ${validExtensions.join(', ')}.`
       outputPath
     , spawnOpts
     };
-    await fileExport(win, doc, exp)
+    await fileExport(win, doc, exp, settings)
     win.previousExportConfig = exp
   }
 }
 
-export const fileExportLikePrevious = (win: CustomBrowserWindow, doc: Doc) => {
+export const fileExportLikePrevious = (win: CustomBrowserWindow, doc: Doc, settings?: Settings) => {
   if (win.previousExportConfig) {
-    fileExport(win, doc, win.previousExportConfig)
+    fileExport(win, doc, win.previousExportConfig, settings)
   } else {
-    fileExportDialog(win, doc)
+    fileExportDialog(win, doc, settings)
   }
 }
 
-export const fileExportToClipboard = async (win: BrowserWindow, doc: Doc) => {
+export const fileExportToClipboard = async (win: BrowserWindow, doc: Doc, settings?: Settings) => {
   showModalWindow(win, 'chooseFormat')
   ipcMain.handleOnce('chooseFormat', async (_event, format: unknown) => {
     if (format === 'closingWindow') {
@@ -95,7 +95,7 @@ export const fileExportToClipboard = async (win: BrowserWindow, doc: Doc) => {
       return
     }
     if (typeof format === 'string') {
-      const res = await runFileExport(win, doc, { toClipboardFormat: format })
+      const res = await runFileExport(win, doc, { toClipboardFormat: format }, settings)
       if (typeof res === 'string') {
         return true
       } else {
@@ -111,16 +111,16 @@ export const fileExportToClipboard = async (win: BrowserWindow, doc: Doc) => {
   })
 }
 
-export const fileExportHTMLToClipboard = (win: BrowserWindow, doc: Doc) => {
-  fileExport(win, doc, { toClipboardFormat: 'html', toClipboardHTML: true })
+export const fileExportHTMLToClipboard = (win: BrowserWindow, doc: Doc, settings?: Settings) => {
+  fileExport(win, doc, { toClipboardFormat: 'html', toClipboardHTML: true }, settings)
 }
 
 
 /**
  * Calls pandoc, takes export settings object and renders dialog
  */
-const fileExport = async (win: BrowserWindow, doc: Doc, exp: ExportOptions) => {
-  const detail = await runFileExport(win, doc, exp)
+const fileExport = async (win: BrowserWindow, doc: Doc, exp: ExportOptions, settings?: Settings) => {
+  const detail = await runFileExport(win, doc, exp, settings)
 
   const success = typeof detail === 'string'
   dialog.showMessageBox(win, {
@@ -137,7 +137,8 @@ const fileExport = async (win: BrowserWindow, doc: Doc, exp: ExportOptions) => {
 const runFileExport = async (
   win: BrowserWindow,
   doc: Doc,
-  exp: ExportOptions
+  exp: ExportOptions,
+  settings?: Settings
 ): Promise<Result<string>> => {
   // simplified version of what I did in https://github.com/mb21/panrun
   const docMeta = doc.meta
@@ -145,7 +146,7 @@ const runFileExport = async (
     ? docMeta.type
     : 'default'
   const [extMeta, fileName] = await readDataDirFile(type + '.yaml')
-  const out = mergeAndValidate(docMeta, extMeta || {}, exp.outputPath, exp.toClipboardFormat)
+  const out = mergeAndValidate(docMeta, extMeta || {}, exp.outputPath, exp.toClipboardFormat, settings)
 
   const cmd  = 'pandoc'
   // Use GFM (GitHub Flavored Markdown) as input format.
@@ -222,7 +223,7 @@ ${err.message}`
 /**
  * merges both metas, sets proper defaults and returns output[toFormat] part
  */
-const mergeAndValidate = (docMeta: Meta, extMeta: Meta, outputPath?: string, toClipboardFormat?: string): Out => {
+const mergeAndValidate = (docMeta: Meta, extMeta: Meta, outputPath?: string, toClipboardFormat?: string, settings?: Settings): Out => {
   let toFormat: string
   if (outputPath) {
     toFormat = extname(outputPath)
@@ -263,6 +264,10 @@ const mergeAndValidate = (docMeta: Meta, extMeta: Meta, outputPath?: string, toC
     }
     if (docMeta.monobackgroundcolor === undefined) {
       out.metadata.monobackgroundcolor = '#f0f0f0';
+    }
+    const effectiveMaxWidth = docMeta.maxwidth || settings?.defaultContentWidth
+    if (typeof effectiveMaxWidth === 'string' && effectiveMaxWidth) {
+      out.metadata.maxwidth = effectiveMaxWidth;
     }
   }
 
