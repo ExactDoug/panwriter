@@ -42,14 +42,17 @@ const renderNext = (state: AppState) => {
 }
 
 const render = async (state: AppState): Promise<Window | undefined> => {
-  const { doc, paginated, previewDivRef } = state
+  const { doc, settings, paginated, previewDivRef } = state
   doc.html = convertMd(doc)
+  const renderDoc = settings.defaultContentWidth && !doc.meta.maxwidth
+    ? { ...doc, meta: { ...doc.meta, maxwidth: settings.defaultContentWidth } }
+    : doc
   const previewDiv = previewDivRef.current
   if (previewDiv) {
     if (paginated) {
-      return renderPaged(doc, previewDiv)
+      return renderPaged(renderDoc, previewDiv)
     } else {
-      return renderPlain(doc, previewDiv)
+      return renderPlain(renderDoc, previewDiv)
     }
   }
 }
